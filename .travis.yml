@@ -1,0 +1,25 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t harrisjevaun/client-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true harrisjevaun/client-test npm run test -- --coverage
+
+after_success:
+  - docker build -t harrisjevaun/multi-nginx ./nginx
+  - docker build -t harrisjevaun/multi-client ./client
+  - docker build -t harrisjevaun/multi-server ./server
+  - docker build -t harrisjevaun/multi-worker ./worker
+
+  # Log in to Docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password=stdin
+
+  # Push images to Docker Hub
+  - docker push harrisjevaun/multi-nginx
+  - docker push harrisjevaun/multi-client
+  - docker push harrisjevaun/multi-server
+  - docker push harrisjevaun/multi-worker
